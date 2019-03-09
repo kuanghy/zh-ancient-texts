@@ -27,7 +27,7 @@ session.headers["User-Agent"] = " ".join([
 
 
 def random_time_sleep():
-    time.sleep(random.random.uniform(2, 15))
+    time.sleep(random.uniform(2, 15))
 
 
 def parse_text_page(url):
