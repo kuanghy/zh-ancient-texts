@@ -39,6 +39,7 @@ def parse_text_page(url):
     for item in doc('tr td.ctext').items():
         item_html = item.html()
         if not re.search(r'<div.*</p>', item_html):
+            log.warning("undesired text: %s", item_html[:20])
             continue
         item_text = PyQuery(item_html).text()
         text_list.append(item_text.strip())
@@ -54,6 +55,7 @@ def parse_contents_page(url, book_name):
     for item in doc('#content3 a').items():
         a_href = item.attr('href')
         if not a_href.startswith(book_name):
+            log.warning("undesired href: %s", a_href)
             continue
         contents[item.html()] = "https://ctext.org/" + a_href
     return contents
@@ -79,17 +81,20 @@ def main():
     json_file = "../data/json/huangdi-neijing-suwen.json"
     content_page = "https://ctext.org/huangdi-neijing/suwen/zhs"
     data = {
-        "bookname" : "黄帝内经",
-        "writer" : "黄帝，歧伯",
-        "type" : "医书",
-        "age" : "中古",
-        "alldata" : []
+        "bookname": "黄帝内经",
+        "writer": "黄帝，歧伯",
+        "type": "医书",
+        "age": "中古",
+        "alldata": []
     }
     contents = parse_contents_page(content_page, 'huangdi-neijing')
     text_idx = 0
     for idx, header in enumerate(contents.keys()):
         section_data = {"section": idx, "header": header, "data": []}
         text_page = contents[header]
+        sections = parse_text_page(text_page)
+        if not sections:
+            log.warning("%s text is empty", header)
         for text in parse_text_page(text_page):
             text_data = {"ID": text_idx, "text": text}
             section_data['data'].append(text_data)
@@ -97,7 +102,6 @@ def main():
             random_time_sleep()
         data['alldata'].append(section_data)
 
-    print(data)
     with open(json_file, 'w') as fp:
         json.dump(data, fp)
 
