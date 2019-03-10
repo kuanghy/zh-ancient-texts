@@ -5,6 +5,7 @@
 # Author: Huoty <sudohuoty@gmail.com>
 # CreateTime: 2019-03-08 20:34:35
 
+import os
 import re
 import json
 import time
@@ -27,7 +28,7 @@ session.headers["User-Agent"] = " ".join([
 
 
 def random_time_sleep():
-    time.sleep(random.uniform(2, 15))
+    time.sleep(random.uniform(30, 180))
 
 
 def parse_text_page(url):
@@ -87,15 +88,23 @@ def main():
         "age": "中古",
         "alldata": []
     }
+    if os.path.exists(json_file):
+        with open(json_file) as fp:
+            data = json.load(fp)
     contents = parse_contents_page(content_page, 'huangdi-neijing')
     text_idx = 0
-    for idx, header in enumerate(contents.keys()):
-        section_data = {"section": idx, "header": header, "data": []}
+    # for idx, header in enumerate(contents.keys()):
+    for section_data in data["alldata"]:
+        # section_data = {"section": idx, "header": header, "data": []}
+        header = section_data["header"]
+        if len(section_data["data"]):
+            log.info("section '%s' is exists", header)
+            continue
         text_page = contents[header]
         sections = parse_text_page(text_page)
         if not sections:
             log.warning("%s text is empty", header)
-        for text in parse_text_page(text_page):
+        for text in sections:
             text_data = {"ID": text_idx, "text": text}
             section_data['data'].append(text_data)
             text_idx += 1
