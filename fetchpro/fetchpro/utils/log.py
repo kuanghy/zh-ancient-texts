@@ -5,15 +5,12 @@
 # CreateTime: 2017-11-30 14:56:07 Thursday
 
 import sys
-import datetime
 import logging
-from logging.handlers import RotatingFileHandler, BufferingHandler
-
-from . import config
+import datetime
+from logging.handlers import SMTPHandler
 
 
 defualt_logger = logging.getLogger()
-
 
 info = defualt_logger.info
 warn = defualt_logger.warning
@@ -21,6 +18,9 @@ warning = defualt_logger.warning
 debug = defualt_logger.debug
 error = defualt_logger.error
 exception = defualt_logger.exception
+
+
+DEFAULT_LOG_FORMAT = '%(asctime)s - %(levelname)s -  %(message)s'
 
 
 class ColoredStreamHandler(logging.StreamHandler):
@@ -79,67 +79,6 @@ class ColoredStreamHandler(logging.StreamHandler):
         self._colors[logging_level] = escaped_ansi_code
 
 
-class SMTPHandler(logging.Handler):
-
-    def __init__(self, mailhost, fromaddr, toaddrs, subject,
-                 credentials=None, secure=None, timeout=5.0):
-        logging.Handler.__init__(self)
-        if isinstance(mailhost, (list, tuple)):
-            self.mailhost, self.mailport = mailhost
-        else:
-            self.mailhost, self.mailport = mailhost, None
-        if isinstance(credentials, (list, tuple)):
-            self.username, self.password = credentials
-        else:
-            self.username = None
-        self.fromaddr = fromaddr
-        if isinstance(toaddrs, str):
-            toaddrs = [toaddrs]
-        self.toaddrs = toaddrs
-        self.subject = subject
-        self.secure = secure
-        self.timeout = timeout
-
-    def getSubject(self, record):
-        """
-        Determine the subject for the email.
-        If you want to specify a subject line which is record-dependent,
-        override this method.
-        """
-        return self.subject
-
-    def emit(self, record):
-        """
-        Emit a record.
-        Format the record and send it to the specified addressees.
-        """
-        try:
-            import smtplib
-            from email.message import EmailMessage
-            import email.utils
-
-            port = self.mailport
-            if not port:
-                port = smtplib.SMTP_PORT
-            smtp = smtplib.SMTP(self.mailhost, port, timeout=self.timeout)
-            msg = EmailMessage()
-            msg['From'] = self.fromaddr
-            msg['To'] = ','.join(self.toaddrs)
-            msg['Subject'] = self.getSubject(record)
-            msg['Date'] = email.utils.localtime()
-            msg.set_content(self.format(record))
-            if self.username:
-                if self.secure is not None:
-                    smtp.ehlo()
-                    smtp.starttls(*self.secure)
-                    smtp.ehlo()
-                smtp.login(self.username, self.password)
-            smtp.send_message(msg)
-            smtp.quit()
-        except Exception:
-            self.handleError(record)
-
-
 class TitledSMTPHandler(SMTPHandler):
     """可定制邮件主题 SMTP 日志处理器"""
 
@@ -157,47 +96,6 @@ class TitledSMTPHandler(SMTPHandler):
         message = record.getMessage()
         record["message"] = message.strip().split('\n')[-1][:60]
         return self.subject % record
-
-
-class BufferingSMTPHandler(logging.handlers.BufferingHandler):
-    def __init__(self, mailhost, fromaddr, toaddrs, subject, capacity, timelimit):
-        logging.handlers.BufferingHandler.__init__(self, capacity)
-        self.mailhost = mailhost
-        self.mailport = None
-        self.fromaddr = fromaddr
-        self.toaddrs = toaddrs
-        self.subject = subject
-        self.setFormatter(logging.Formatter("%(asctime)s %(levelname)-5s %(message)s"))
-
-
-class BufferingSMTPHandler(BufferingHandler):
-
-    def __init__(self, capacity, toaddrs=None, subject=None):
-        logging.handlers.BufferingHandler.__init__(self, capacity)
-
-        if toaddrs:
-            self.toaddrs = toaddrs
-        else:
-            # Send messages to site administrators by default
-            self.toaddrs = zip(*settings.ADMINS)[-1]
-
-        if subject:
-            self.subject = subject
-        else:
-            self.subject = 'logging'
-
-    def flush(self):
-        if len(self.buffer) == 0:
-            return
-
-        try:
-            msg = "\r\n".join(map(self.format, self.buffer))
-            emsg = EmailMessage(self.subject, msg, to=self.toaddrs)
-            emsg.send()
-        except Exception:
-            # handleError() will print exception info to stderr if logging.raiseExceptions is True
-            self.handleError(record=None)
-        self.buffer = []
 
 
 class SystemLogFormatter(logging.Formatter):
@@ -231,35 +129,6 @@ def setup_logging(reset=False):
     stream_handler = ColoredStreamHandler(sys.stdout)
     stream_handler.setLevel(logging.DEBUG)
     stream_handler.setFormatter(
-        SystemLogFormatter(config.LOG_FORMAT, datefmt='%Y-%m-%d %H:%M:%S,%f'))
-    if not enable_extra_log:
-        stream_handler.addFilter(JQArenaFilter())
+        SystemLogFormatter(DEFAULT_LOG_FORMAT, datefmt='%Y-%m-%d %H:%M:%S,%f')
+    )
     logger.addHandler(stream_handler)
-
-    # add rotating file log handler
-    if enable_file_log and config.ROTATE_LOG_FILE:
-        logfile = config.ROTATE_LOG_FILE
-        logsize = config.ROTATE_LOG_FILE_MAXSIZE or (5 * 1024 * 1024)
-        backups = config.ROTATE_LOG_FILE_BACKUPS or 10
-        file_handler = RotatingFileHandler(logfile, maxBytes=logsize, backupCount=backups)
-        file_handler.setLevel(logging.DEBUG)
-        file_handler.setFormatter(
-            SystemLogFormatter(config.LOG_FORMAT, datefmt='%Y-%m-%d %H:%M:%S,%f'))
-        if not enable_extra_log:
-            file_handler.addFilter(JQArenaFilter())
-        logger.addHandler(file_handler)
-        logger.debug("Added rotating file handler, logfile: %s, logsize: %s, backups: %s",
-                     file_handler.baseFilename, file_handler.maxBytes, file_handler.backupCount)
-
-    # add mail log handler for error
-    if enable_smtp_log and config.EMAIL_TOADDRS:
-        smtp_handler = TitledSMTPHandler(
-            mailhost=config.EMAIL_HOST,
-            fromaddr="JQArenaErrorMonitor<{}>".format(config.EMAIL_ADDR),
-            toaddrs=config.EMAIL_TOADDRS,
-            subject="%(name)s Error: %(message)s",
-            credentials=(config.EMAIL_ADDR, config.EMAIL_PASSWD)
-        )
-        smtp_handler.setLevel(logging.ERROR)
-        smtp_handler.setFormatter(logging.Formatter(config.ERROR_MAIL_FORMAT))
-        logger.addHandler(smtp_handler)

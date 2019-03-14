@@ -13,7 +13,7 @@ from whois import whois
 from cached_property import cached_property
 
 from .utils import uri_join
-from .retry import retry
+from ..uitls.retry import retry
 
 
 class BaseCrawler(object):
