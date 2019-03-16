@@ -17,8 +17,14 @@ TimeDelta = datetime.timedelta
 today = datetime.date.today
 now = datetime.datetime.now
 
-max_dt = datetime.datetime.max
-min_dt = datetime.datetime.min
+MAX_DATE = datetime.date.max
+MIN_DATE = datetime.date.min
+
+MAX_DT = datetime.datetime.max
+MIN_DT = datetime.datetime.min
+
+MAX_TD = datetime.timedelta.max
+MIN_TD = datetime.timedelta.min
 
 
 def date2str(date, separator=None):
