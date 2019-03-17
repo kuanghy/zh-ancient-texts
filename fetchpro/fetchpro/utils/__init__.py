@@ -4,4 +4,4 @@
 # Author: Huoty <sudohuoty@gmail.com>
 # CreateTime: 2019-03-11 00:35:50
 
-from .urltool import url_join
+from .urltool import uri_join
