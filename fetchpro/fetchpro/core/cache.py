@@ -24,15 +24,12 @@ from ..utils.when import TimeDelta
 class NullCache(object):
 
     def __getitem__(self, url):
-        pass
+        raise KeyError("This is a null cache")
 
     def __setitem__(self, url, content):
         pass
 
     def __delitem__(self, url):
-        pass
-
-    def has_expired(self, timestamp):
         pass
 
     def pop(self, url):

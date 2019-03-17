@@ -1,5 +1,5 @@
 requests
 pyquery
 builtwith
-whois
+python-whois
 cached_property
