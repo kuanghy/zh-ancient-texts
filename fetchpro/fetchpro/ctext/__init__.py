@@ -29,7 +29,7 @@ class CTextCrawler(BaseCrawler):
 
     def parse_text_page(self, url):
         """解析文本内容页面"""
-        doc = PyQuery(self.request(url))
+        doc = PyQuery(self.request(url).encode("utf-8"))
         text_list = []
         log.info("parsing %s", url)
         for item in doc('tr td.ctext').items():
@@ -43,7 +43,7 @@ class CTextCrawler(BaseCrawler):
 
     def parse_contents_page(self, url, book_name):
         """解析书籍目录页面"""
-        doc = PyQuery(self.request(url))
+        doc = PyQuery(self.request(url).encode("utf-8"))
         contents = {}
         log.info("parsing %s", url)
         for item in doc('#content3 a').items():
@@ -69,7 +69,7 @@ class CTextCrawler(BaseCrawler):
             headers={'Referer': 'https://ctext.org/pre-qin-and-han/zhs'}
         )
 
-        self.request.session.headers.update(self.pre_request.session)
+        self.request.session.headers.update(self.pre_request.session.headers)
         lingshujin_nav_page = "https://ctext.org/huangdi-neijing/ling-shu-jing/zhs"
         self.request(
             lingshujin_nav_page,
