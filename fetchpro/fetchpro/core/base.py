@@ -12,7 +12,7 @@ from builtwith import builtwith
 from whois import whois
 from cached_property import cached_property
 
-from .utils import uri_join
+from ..utils import uri_join
 from .request import Requestor
 
 

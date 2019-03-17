@@ -69,14 +69,14 @@ class CTextCrawler(BaseCrawler):
             headers={'Referer': 'https://ctext.org/pre-qin-and-han/zhs'}
         )
 
-        self.request.session.update(self.pre_request.session)
+        self.request.session.headers.update(self.pre_request.session)
         lingshujin_nav_page = "https://ctext.org/huangdi-neijing/ling-shu-jing/zhs"
         self.request(
             lingshujin_nav_page,
             headers={'Referer': 'https://ctext.org/huangdi-neijing/zhs'}
         )
 
-        self.request.session.update({'Referer': lingshujin_nav_page})
+        self.request.session.headers.update({'Referer': lingshujin_nav_page})
 
         pro_dir = pathlib.Path(__file__).parent.parent.parent
         json_file = pro_dir / "data/json/huangdi-neijing-lingshujin.json"
