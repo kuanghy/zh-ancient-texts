@@ -18,6 +18,7 @@ except ImportError:
     import pickle
 
 from ..utils import when, cipher
+from ..utils.when import TimeDelta
 
 
 class DiskCache:
@@ -28,7 +29,7 @@ class DiskCache:
 
     def __init__(self, cache_dir=None, expires=None, compress=True):
         self._cache_dir = cache_dir
-        self.expires = expires or when.MAX_TD
+        self.expires = expires or TimeDelta(days=(500 * 365))
         self.compress = compress
 
     @property

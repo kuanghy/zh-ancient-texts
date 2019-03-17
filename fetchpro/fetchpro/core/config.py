@@ -18,10 +18,6 @@ EMAIL_TOADDRS = []    # 收件人列表
 
 
 # 日志相关配置
-ROTATE_LOG_FILE = None
-ROTATE_LOG_FILE_MAXSIZE = None
-ROTATE_LOG_FILE_BACKUPS = None
-
 LOG_FORMAT = "[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s"
 ERROR_MAIL_FORMAT = """\
 Logger Name:        %(name)s
@@ -37,6 +33,28 @@ Message:
 
 %(message)s
 """
+
+ROTATE_LOG_FILE = None
+ROTATE_LOG_FILE_MAXSIZE = None
+ROTATE_LOG_FILE_BACKUPS = None
+
+
+# 网页下载相关配置
+HTTP_REQUEST_DELAY = (0, 5 * 60)
+HTTP_USER_AGENT = "chrome"
+HTTP_PROXY_POOL = []
+HTTP_TIMEOUT = 10
+HTTP_PAGE_CACHE_PARAMS = {
+    "type": "disk",
+    "cache_dir": None,
+    "expires": None,
+    "compress": True,
+}
+HTTP_RETRY_PARAMS = {
+    "delay": 1,
+    "exponential": True,
+    "max_delay": (30 * 60),
+}
 
 
 class Config(object):
@@ -60,9 +78,6 @@ class Config(object):
 
         for path in config_paths:
             self.__load_config(path, self.__cfg__)
-
-        if not self.__cfg__["SSDB_URLS"] and self.__cfg__["SSDB_URL"]:
-            self.__cfg__["SSDB_URLS"] = [self.__cfg__["SSDB_URL"]]
 
     def __load_config(self, path, scope):
         if not path or not os.path.exists(path):

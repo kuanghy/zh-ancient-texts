@@ -92,8 +92,8 @@ class TitledSMTPHandler(SMTPHandler):
         super(TitledSMTPHandler, self).emit(record)
 
     def getSubject(self, record):
-        record = vars(record)
         message = record.getMessage()
+        record = vars(record)
         record["message"] = message.strip().split('\n')[-1][:60]
         return self.subject % record
 
@@ -113,7 +113,7 @@ class SystemLogFormatter(logging.Formatter):
         return s
 
 
-def setup_logging(reset=False):
+def setup_logging(reset=False, log_format=None):
     logger = logging.getLogger()
 
     if len(logger.handlers) > 0 and not reset:
@@ -126,9 +126,13 @@ def setup_logging(reset=False):
     logger.setLevel(logging.DEBUG)
 
     # add stream log handler for info
+    if not log_format:
+        log_format = DEFAULT_LOG_FORMAT
     stream_handler = ColoredStreamHandler(sys.stdout)
     stream_handler.setLevel(logging.DEBUG)
     stream_handler.setFormatter(
-        SystemLogFormatter(DEFAULT_LOG_FORMAT, datefmt='%Y-%m-%d %H:%M:%S,%f')
+        SystemLogFormatter(log_format, datefmt='%Y-%m-%d %H:%M:%S,%f')
     )
     logger.addHandler(stream_handler)
+
+    return logger

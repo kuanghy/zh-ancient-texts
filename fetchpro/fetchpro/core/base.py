@@ -13,7 +13,6 @@ from whois import whois
 from cached_property import cached_property
 
 from .utils import uri_join
-from ..uitls.retry import retry
 
 
 class BaseCrawler(object):
@@ -24,14 +23,27 @@ class BaseCrawler(object):
 
     初始化参数：
     ---------
-        site: 要爬取的站点，如果为域名则默认为使用 http 协议，也可指定协议，如：https://baidu.com
+        site: 要爬取的站点，如果为域名则默认为使用 http 协议，也可指定协议，
+              如：https://baidu.com
     """
 
-    def __init__(self, site):
-        self.site = site if site.startswith("http") else "http://{}".format(site)
+    def __init__(self, site=None):
+        self._site = site
 
-        self.robots_url = uri_join(self.site, "/robots.txt")
-        self.sitemap_url = uri_join(self.site, "/sitemap.xml")
+    @cached_property
+    def site(self):
+        _site = self._site
+        if not _site:
+            return None
+        return _site if _site.startswith("http") else "http://{}".format(_site)
+
+    @property
+    def robots_url(self):
+        return uri_join(self.site, "/robots.txt") if self.site else None
+
+    @property
+    def sitemap_url(self):
+        return uri_join(self.site, "/sitemap.xml") if self.site else None
 
     @cached_property
     def builtwith(self):
@@ -39,7 +51,7 @@ class BaseCrawler(object):
         return builtwith(self.site)
 
     def show_builtwith(self):
-        print("Site({}) builtwith message:".format(self.site))
+        print("Site '{}' builtwith message:".format(self.site))
         self.__print_dict_items(self.builtwith)
 
     @cached_property
@@ -48,7 +60,7 @@ class BaseCrawler(object):
         return whois(self.site)
 
     def show_whois(self):
-        print("Site({}) owner message:".format(self.site))
+        print("Site '{}' owner message:".format(self.site))
         self.__print_dict_items(self.whois)
 
     @staticmethod

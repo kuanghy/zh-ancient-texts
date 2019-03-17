@@ -20,7 +20,7 @@ class Retrier(object):
         delay: 两次重试之间的间隔时间, 可以为一个 list 或 tuple 来指定每次间隔的时间,
             且重试次数为其长度
         exceptions: 指定哪些异常发生时需要重试, 可以是一个 list 或者 tuple
-        exponential, max_delay: 时间间隔按指数增长, 如果 exponential 为 True,
+        exponential, max_delay: 时间间隔按指数增长. 如果 exponential 为 True,
             则每次的时间间隔为：(2 ** previous_tried_count) * delay
             max_delay 表示当增长到该值时不再增长，即超过该值后就永远为该值
         random_delay_min, random_delay_max: 随机间隔时间
