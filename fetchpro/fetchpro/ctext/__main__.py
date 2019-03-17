@@ -4,5 +4,6 @@
 # Author: Huoty <sudohuoty@gmail.com>
 # CreateTime: 2019-03-11 20:50:07
 
-def main():
-    pass
+if __name__ == "__main__":
+    from . import CTextCrawler
+    CTextCrawler().start()

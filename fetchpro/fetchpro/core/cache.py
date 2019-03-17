@@ -21,7 +21,33 @@ from ..utils import when, cipher
 from ..utils.when import TimeDelta
 
 
-class DiskCache:
+class NullCache(object):
+
+    def __getitem__(self, url):
+        pass
+
+    def __setitem__(self, url, content):
+        pass
+
+    def __delitem__(self, url):
+        pass
+
+    def has_expired(self, timestamp):
+        pass
+
+    def pop(self, url):
+        pass
+
+    def clear(self):
+        pass
+
+
+class MemoryCache(NullCache):
+
+    pass
+
+
+class DiskCache(NullCache):
     """磁盘缓存
 
     将一个 url 对应的 html 内容缓存到磁盘上
@@ -119,6 +145,6 @@ class DiskCache:
             shutil.rmtree(self.cache_dir)
 
 
-class SqliteCache(object):
+class SqliteCache(NullCache):
 
     pass

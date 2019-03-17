@@ -13,6 +13,7 @@ from whois import whois
 from cached_property import cached_property
 
 from .utils import uri_join
+from .request import Requestor
 
 
 class BaseCrawler(object):
@@ -29,6 +30,7 @@ class BaseCrawler(object):
 
     def __init__(self, site=None):
         self._site = site
+        self.request = Requestor()
 
     @cached_property
     def site(self):
