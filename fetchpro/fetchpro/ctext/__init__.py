@@ -78,7 +78,7 @@ class CTextCrawler(BaseCrawler):
 
         self.request.session.headers.update({'Referer': lingshujin_nav_page})
 
-        pro_dir = pathlib.Path(__file__).parent.parent.parent
+        pro_dir = pathlib.Path(__file__).parent.parent.parent.parent
         json_file = pro_dir / "data/json/huangdi-neijing-lingshujin.json"
 
         data = {
@@ -100,6 +100,7 @@ class CTextCrawler(BaseCrawler):
             sections = self.parse_text_page(text_page)
             if not sections:
                 log.warning("%s text is empty", header)
+                self.request.cache.pop(text_page)
             for text in sections:
                 text_data = {"ID": text_idx, "text": text}
                 section_data['data'].append(text_data)
