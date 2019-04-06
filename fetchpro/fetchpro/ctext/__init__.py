@@ -49,12 +49,20 @@ class CTextCrawler(BaseCrawler):
         doc = PyQuery(self.request(url).encode("utf-8"))
         contents = {}
         log.info("parsing %s", url)
-        for item in doc('#content3 a').items():
-            a_href = item.attr('href')
-            if not a_href.startswith(book_name):
-                log.warning("undesired href: %s", a_href)
-                continue
-            contents[item.html()] = uri_join(self.site, a_href)
+
+        def _extract_contents(element_pattern):
+            for item in doc(element_pattern).items():
+                a_href = item.attr('href')
+                if not a_href.startswith(book_name):
+                    log.warning("undesired href: %s", a_href)
+                    continue
+                contents[item.html()] = uri_join(self.site, a_href)
+
+        for element_pattern in ['#content3 a', '#content2 a']:
+            _extract_contents(element_pattern)
+            if contents:
+                break
+
         return contents
 
     def start(self):
@@ -63,17 +71,17 @@ class CTextCrawler(BaseCrawler):
             "https://ctext.org/zhs",
             headers={'Referer': 'https://ctext.org/'}
         )
-        self.pre_request(
-            "https://ctext.org/pre-qin-and-han/zhs",
-            headers={'Referer': 'https://ctext.org/zhs'}
-        )
-        self.pre_request(
-            "https://ctext.org/daoism/zhs",
-            headers={'Referer': 'https://ctext.org/pre-qin-and-han/zhs'}
-        )
+        # self.pre_request(
+        #     "https://ctext.org/pre-qin-and-han/zhs",
+        #     headers={'Referer': 'https://ctext.org/zhs'}
+        # )
+        # self.pre_request(
+        #     "https://ctext.org/daoism/zhs",
+        #     headers={'Referer': 'https://ctext.org/pre-qin-and-han/zhs'}
+        # )
 
         self.request.session.headers.update(self.pre_request.session.headers)
-        target_page = "https://ctext.org/zhuangzi/miscellaneous-chapters/zhs"
+        target_page = "https://ctext.org/lie-xian-zhuan/zhs"
         self.request(
             target_page,
             headers={'Referer': 'https://ctext.org/zhuangzi/zhs'}
@@ -82,21 +90,22 @@ class CTextCrawler(BaseCrawler):
         self.request.session.headers.update({'Referer': target_page})
 
         pro_dir = pathlib.Path(__file__).parent.parent.parent.parent
-        json_file = pro_dir / "data/json/zhuangzi-zapian.json"
+        json_file = pro_dir / "data/json/lie-xian-zhuan.json"
 
         data = {
-            "bookname": "庄子●杂篇",
-            "writer": "庄周",
-            "type": "道家经文",
-            "age": "中古",
+            "bookname": "列仙传",
+            "writer": "刘向",
+            "type": "道家",
+            "age": "西汉",
             "alldata": []
         }
         # if os.path.exists(json_file):
         #     with open(json_file) as fp:
         #         data = json.load(fp)
 
-        contents = self.parse_contents_page(target_page, 'zhuangzi')
+        contents = self.parse_contents_page(target_page, 'lie-xian-zhuan')
         text_idx = 0
+        # contents = {"道德经": "https://ctext.org/dao-de-jing/zhs"}
         for idx, header in enumerate(contents.keys()):
             section_data = {"section": idx, "header": header, "data": []}
             text_page = contents[header]
