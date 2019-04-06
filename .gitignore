@@ -123,4 +123,5 @@ dmypy.json
 .pyre/
 
 # config
+.ftpconfig
 fetchpro/config.py

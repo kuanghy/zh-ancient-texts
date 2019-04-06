@@ -32,10 +32,11 @@ RemoteHostError = type("RemoteHostError", (Exception,), {})
 
 class Requestor(object):
 
-    def __init__(self, user_agent=None, proxy_pool=None, request_delay=None,
-                 cache=None, timeout=None):
+    def __init__(self, user_agent=None, proxy_pool=None, enable_proxy=True,
+                 request_delay=None, cache=None, timeout=None):
         self._user_agent = user_agent
         self.proxy_pool = proxy_pool
+        self.enable_proxy = enable_proxy
         self.request_delay = request_delay
         self._cache = cache
         self.timeout = timeout or config.HTTP_TIMEOUT
@@ -95,7 +96,7 @@ class Requestor(object):
         method = method.lower()
         request_func = getattr(self.session, method)
         kwargs.setdefault("timeout", self.timeout)
-        if self.proxies:
+        if self.enable_proxy and self.proxies:
             kwargs["proxies"] = self.proxies
         log.info("requesting '%s', method: %s, kwargs: %s", url, method, kwargs)
         try:

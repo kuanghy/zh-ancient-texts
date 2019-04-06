@@ -25,7 +25,8 @@ class CTextCrawler(BaseCrawler):
     def __init__(self):
         super().__init__("https://ctext.org/")
 
-        self.pre_request = Requestor(request_delay=(1, 3), cache=NullCache())
+        self.pre_request = Requestor(enable_proxy=False, request_delay=(1, 3),
+                                     cache=NullCache())
 
     def parse_text_page(self, url):
         """解析文本内容页面"""
@@ -34,6 +35,8 @@ class CTextCrawler(BaseCrawler):
         log.info("parsing %s", url)
         for item in doc('tr td.ctext').items():
             item_html = item.html()
+            if not item_html:
+                continue
             if not re.search(r'<div.*</p>', item_html):
                 log.warning("undesired text: %s", item_html[:20])
                 continue
@@ -65,26 +68,26 @@ class CTextCrawler(BaseCrawler):
             headers={'Referer': 'https://ctext.org/zhs'}
         )
         self.pre_request(
-            "https://ctext.org/huangdi-neijing/zhs",
+            "https://ctext.org/daoism/zhs",
             headers={'Referer': 'https://ctext.org/pre-qin-and-han/zhs'}
         )
 
         self.request.session.headers.update(self.pre_request.session.headers)
-        lingshujin_nav_page = "https://ctext.org/huangdi-neijing/ling-shu-jing/zhs"
+        target_page = "https://ctext.org/zhuangzi/miscellaneous-chapters/zhs"
         self.request(
-            lingshujin_nav_page,
-            headers={'Referer': 'https://ctext.org/huangdi-neijing/zhs'}
+            target_page,
+            headers={'Referer': 'https://ctext.org/zhuangzi/zhs'}
         )
 
-        self.request.session.headers.update({'Referer': lingshujin_nav_page})
+        self.request.session.headers.update({'Referer': target_page})
 
         pro_dir = pathlib.Path(__file__).parent.parent.parent.parent
-        json_file = pro_dir / "data/json/huangdi-neijing-lingshujin.json"
+        json_file = pro_dir / "data/json/zhuangzi-zapian.json"
 
         data = {
-            "bookname": "黄帝内经●灵枢经",
-            "writer": "黄帝，歧伯",
-            "type": "医书",
+            "bookname": "庄子●杂篇",
+            "writer": "庄周",
+            "type": "道家经文",
             "age": "中古",
             "alldata": []
         }
@@ -92,7 +95,7 @@ class CTextCrawler(BaseCrawler):
         #     with open(json_file) as fp:
         #         data = json.load(fp)
 
-        contents = self.parse_contents_page(lingshujin_nav_page, 'huangdi-neijing')
+        contents = self.parse_contents_page(target_page, 'zhuangzi')
         text_idx = 0
         for idx, header in enumerate(contents.keys()):
             section_data = {"section": idx, "header": header, "data": []}
