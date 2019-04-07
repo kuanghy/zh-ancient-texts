@@ -47,15 +47,42 @@ class CTextCrawler(BaseCrawler):
         contents = {}
         log.info("parsing %s", url)
 
-        def _extract_contents(element_pattern):
-            for item in doc(element_pattern).items():
-                a_href = item.attr('href')
-                if not a_href.startswith(book_name):
-                    log.warning("undesired href: %s", a_href)
-                    continue
-                contents[item.html()] = uri_join(self.site, a_href)
+        block_pattern = re.compile(r"<br */?> *<br */?>")
 
-        for element_pattern in ['#content3 a', '#content2 a']:
+        def _extract_contents(element_pattern):
+            contents_html = doc(element_pattern).html()
+            if not contents_html:
+                log.warning("contents html is empty: %s", contents_html)
+                return
+
+            contents_blocks = [
+                item for item in
+                re.split(block_pattern, contents_html)
+            ]
+            # 如果目录是分块的，说明此书籍是分篇目的
+            has_multi_parts = len(contents_blocks) > 1
+
+            for contents_block in contents_blocks:
+                b_doc = PyQuery(contents_block)
+                sub_name = None
+                for item in b_doc("a").items():
+                    a_href = item.attr('href')
+                    if not a_href.startswith(book_name):
+                        log.warning("undesired href: %s", a_href)
+                        continue
+                    if has_multi_parts:
+                        if sub_name is None:
+                            # 第一个链接是篇目的标题
+                            sub_name = item.html()
+                            log.info("'%s' has multiple parts, sub_name: %s",
+                                     book_name, sub_name)
+                            continue
+                        header = "{}●{}".format(sub_name, item.html())
+                    else:
+                        header = item.html()
+                    contents[header] = uri_join(self.site, a_href)
+
+        for element_pattern in ['#content3', '#content2']:
             _extract_contents(element_pattern)
             if contents:
                 break
