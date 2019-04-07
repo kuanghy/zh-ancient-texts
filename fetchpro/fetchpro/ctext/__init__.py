@@ -67,9 +67,10 @@ class CTextCrawler(BaseCrawler):
                 sub_name = None
                 for item in b_doc("a").items():
                     a_href = item.attr('href')
-                    if not a_href.startswith(book_name):
+                    if not a_href.startswith(book_name) or not a_href.endswith("zhs"):
                         log.warning("undesired href: %s", a_href)
                         continue
+
                     if has_multi_parts:
                         if sub_name is None:
                             # 第一个链接是篇目的标题
