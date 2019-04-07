@@ -12,8 +12,6 @@ import pathlib
 from pyquery import PyQuery
 
 from ..core import BaseCrawler
-from ..core.request import Requestor
-from ..core.cache import NullCache
 from ..utils import uri_join
 
 
@@ -24,9 +22,8 @@ class CTextCrawler(BaseCrawler):
 
     def __init__(self):
         super().__init__("https://ctext.org/")
-
-        self.pre_request = Requestor(enable_proxy=False, request_delay=(1, 3),
-                                     cache=NullCache())
+        self._zhs_page = "https://ctext.org/zhs"
+        self._pro_dir = pathlib.Path(__file__).parent.parent.parent.parent
 
     def parse_text_page(self, url):
         """解析文本内容页面"""
@@ -65,45 +62,16 @@ class CTextCrawler(BaseCrawler):
 
         return contents
 
-    def start(self):
-        self.pre_request("https://ctext.org/")
-        self.pre_request(
-            "https://ctext.org/zhs",
-            headers={'Referer': 'https://ctext.org/'}
-        )
-        # self.pre_request(
-        #     "https://ctext.org/pre-qin-and-han/zhs",
-        #     headers={'Referer': 'https://ctext.org/zhs'}
-        # )
-        # self.pre_request(
-        #     "https://ctext.org/daoism/zhs",
-        #     headers={'Referer': 'https://ctext.org/pre-qin-and-han/zhs'}
-        # )
+    def parse_book_and_save_to_json(self, page, data_meta):
+        book_name = data_meta.pop("_simple_bookname")
+        json_file = self._pro_dir / "data/json/{}.json".format(book_name)
 
-        self.request.session.headers.update(self.pre_request.session.headers)
-        target_page = "https://ctext.org/lie-xian-zhuan/zhs"
-        self.request(
-            target_page,
-            headers={'Referer': 'https://ctext.org/zhuangzi/zhs'}
-        )
+        data = dict(alldata=[], **data_meta)
 
-        self.request.session.headers.update({'Referer': target_page})
+        contents = self.parse_contents_page(page, book_name)
+        if not contents:
+            contents = {data_meta["bookname"]: page}
 
-        pro_dir = pathlib.Path(__file__).parent.parent.parent.parent
-        json_file = pro_dir / "data/json/lie-xian-zhuan.json"
-
-        data = {
-            "bookname": "列仙传",
-            "writer": "刘向",
-            "type": "道家",
-            "age": "西汉",
-            "alldata": []
-        }
-        # if os.path.exists(json_file):
-        #     with open(json_file) as fp:
-        #         data = json.load(fp)
-
-        contents = self.parse_contents_page(target_page, 'lie-xian-zhuan')
         text_idx = 0
         # contents = {"道德经": "https://ctext.org/dao-de-jing/zhs"}
         for idx, header in enumerate(contents.keys()):
@@ -121,3 +89,39 @@ class CTextCrawler(BaseCrawler):
 
         with open(json_file, 'w') as fp:
             json.dump(data, fp, ensure_ascii=False)
+
+    def start(self, target_page):
+        self.pre_request(self.site)
+        self.pre_request(self._zhs_page, headers={'Referer': self.site})
+        self.request.session.headers.update(self.pre_request.session.headers)
+
+        resp = self.request(target_page, headers={'Referer': self._zhs_page})
+        self.request.session.headers.update({'Referer': target_page})
+
+        doc = PyQuery(resp.content)
+
+        book_type = re.search("《(.*)》", doc("#content3 h2").html()).groups()
+        book_type = book_type[0] if book_type else None
+
+        block_pattern = re.compile(r"<br */?> *<br */?>")
+        for book_block in re.split(block_pattern, doc("#content3").html()):
+            b_doc = PyQuery(book_block)
+            book_age = b_doc("span.etext.opt b").text()
+            for item in b_doc("a").items():
+                url = item.attr("href")
+                book_name = re.match(r"(.+)/zhs", url)
+                if not book_name:
+                    continue
+
+                book_name = book_name.groups()[0]
+                book_zh_name = item.text()
+
+                data_meta = {
+                    "_simple_bookname": book_name,
+                    "bookname": book_zh_name,
+                    "writer": None,
+                    "type": book_type,
+                    "age": book_age,
+                }
+
+                self.parse_book_and_save_to_json(url, data_meta)

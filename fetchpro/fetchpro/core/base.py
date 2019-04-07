@@ -14,6 +14,7 @@ from cached_property import cached_property
 
 from ..utils import uri_join
 from .request import Requestor
+from .cache import NullCache
 
 
 class BaseCrawler(object):
@@ -38,6 +39,14 @@ class BaseCrawler(object):
         if not _site:
             return None
         return _site if _site.startswith("http") else "http://{}".format(_site)
+
+    @cached_property
+    def pre_request(self):
+        return Requestor(
+            enable_proxy=False,
+            request_delay=(1, 3),
+            cache=NullCache()
+        )
 
     @property
     def robots_url(self):
