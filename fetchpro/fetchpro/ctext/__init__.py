@@ -34,10 +34,10 @@ class CTextCrawler(BaseCrawler):
             item_html = item.html()
             if not item_html:
                 continue
-            if not re.search(r'<div.*</p>', item_html):
-                log.warning("undesired text: %s", item_html[:20])
+            if not re.search("""<div *id=['"]comm""", item_html.strip()):
+                log.warning("undesired text: %s", item_html[:60])
                 continue
-            item_text = PyQuery(item_html).text()
+            item_text = item.text()
             text_list.append(item_text.strip())
         return text_list
 
@@ -73,7 +73,6 @@ class CTextCrawler(BaseCrawler):
             contents = {data_meta["bookname"]: page}
 
         text_idx = 0
-        # contents = {"道德经": "https://ctext.org/dao-de-jing/zhs"}
         for idx, header in enumerate(contents.keys()):
             section_data = {"section": idx, "header": header, "data": []}
             text_page = contents[header]
@@ -98,7 +97,7 @@ class CTextCrawler(BaseCrawler):
         resp = self.request(target_page, headers={'Referer': self._zhs_page})
         self.request.session.headers.update({'Referer': target_page})
 
-        doc = PyQuery(resp.content)
+        doc = PyQuery(resp.encode("utf-8"))
 
         book_type = re.search("《(.*)》", doc("#content3 h2").html()).groups()
         book_type = book_type[0] if book_type else None
@@ -109,7 +108,7 @@ class CTextCrawler(BaseCrawler):
             book_age = b_doc("span.etext.opt b").text()
             for item in b_doc("a").items():
                 url = item.attr("href")
-                book_name = re.match(r"(.+)/zhs", url)
+                book_name = re.match(r"([^/]+)/zhs", url)
                 if not book_name:
                     continue
 
@@ -123,5 +122,7 @@ class CTextCrawler(BaseCrawler):
                     "type": book_type,
                     "age": book_age,
                 }
+                log.info("get '%s' data meta: %s", book_name, data_meta)
 
-                self.parse_book_and_save_to_json(url, data_meta)
+                book_contents_page = uri_join(self.site, url)
+                self.parse_book_and_save_to_json(book_contents_page, data_meta)

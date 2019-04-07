@@ -12,7 +12,7 @@ import requests
 from cached_property import cached_property
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 from requests.exceptions import (
-    # ConnectionError as RequestConnectionError,
+    ConnectionError as RequestConnectionError,
     Timeout as RequestTimeout,
     SSLError as RequestSSLError
 )
@@ -120,7 +120,7 @@ class Requestor(object):
         retry_params = config.HTTP_RETRY_PARAMS.copy()
         retry_params.update({
             "exceptions": (
-                # RequestConnectionError,
+                RequestConnectionError,
                 RequestTimeout,
                 RemoteHostError
             ),

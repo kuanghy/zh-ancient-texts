@@ -14,8 +14,8 @@ from . import CTextCrawler
 def _main():
     load_config()
     setup_logging()
-    CTextCrawler().start(sys.args[1])
+    CTextCrawler().start(sys.argv[1])
 
 
 if __name__ == "__main__":
-    sys.exit(_main)
+    sys.exit(_main())
