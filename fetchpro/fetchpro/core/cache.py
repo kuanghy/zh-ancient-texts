@@ -124,7 +124,7 @@ class DiskCache(NullCache):
             path += 'index.html'
         filename = components.netloc + path + components.query
         # replace invalid characters
-        filename = re.sub('[^/0-9a-zA-Z\-.,;_ ]', '_', filename)
+        filename = re.sub(r'[^/0-9a-zA-Z\-.,;_ ]', '_', filename)
         # restrict maximum number of characters
         filename = '/'.join(segment[:255] for segment in filename.split('/'))
         return path_join(self.cache_dir, filename)
